@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body {
+            background-color: black;
+        }
+        #container {
+            position: relative;
+        }
+        .gameElement {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: white;
+        }
+        .gameElement.element_0 {
+            background-color: black;
+        }
+        .gameElement.element_1 {
+            background-image: url(file:///C:/Users/twin5/Desktop/eat_up/Pacman.png);
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .gameElement.element_3 {
+            background-image: url(file:///C:/Users/twin5/Desktop/eat_up/cherries.png);
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .gameElement.element_4 {
+            background-image: url(file:///C:/Users/twin5/Desktop/eat_up/clock.png);
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        #score, #time {
+            display: inline-block;
+            font-size: 25px;
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 5px;
+            border: 2px solid black;
+            box-sizing: border-box;
+            background-color: white;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Eat Up</title>
+</head>
+<body>
+    <div id="score">Score: <span></span></div><div id="time">Time Elapsed: <span id="minutes">0</span>:<span id="seconds">00</span></div>
+    <div id="container"></div>
+    <script>
+        const baseSize = 40;
+        const container = document.querySelector('#container');
+        const gameMap = [
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,2,2,2,2,2,2,2,2,2,2,3,0,2,2,2,0,2,3,0],
+            [0,2,0,0,0,0,0,0,0,2,0,2,0,2,0,2,2,2,0,0],
+            [0,2,0,3,0,2,2,2,0,2,0,2,0,2,0,2,0,2,2,0],
+            [0,2,0,2,0,2,0,3,0,2,0,2,2,2,0,2,0,0,2,0],
+            [0,2,2,2,0,2,0,0,0,2,0,2,0,2,0,2,0,2,2,0,0,0,0,0,0],
+            [0,0,0,2,0,2,2,2,2,2,0,2,0,2,0,2,0,2,0,0,3,2,2,2,0],
+            [0,3,0,2,0,0,0,0,0,0,0,2,0,2,2,3,0,2,2,0,0,0,0,2,0],
+            [0,2,2,2,2,2,2,2,2,2,2,3,0,0,0,0,0,0,2,2,2,2,2,2,0],
+            [0,0,0,0,0,2,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0],
+            [0,3,2,2,0,2,2,2,2,2,2,2,0,2,0,2,0,0,0,0],
+            [0,2,0,2,0,0,0,2,0,0,0,2,0,2,0,2,2,2,3,0],
+            [0,2,0,2,2,2,2,2,0,3,0,2,0,2,0,0,2,0,0,0],
+            [0,2,0,0,0,0,0,0,0,2,0,2,0,2,0,2,2,0,3,0],
+            [0,2,2,2,2,2,2,2,2,2,0,2,0,2,0,2,0,0,2,0],
+            [0,0,0,0,0,2,0,0,0,0,0,2,0,2,0,2,2,2,2,0],
+            [0,2,2,2,2,2,2,2,3,0,2,2,0,2,0,0,0,0,2,0],
+            [0,2,0,2,0,0,0,0,0,0,2,0,0,2,0,4,2,0,2,0],
+            [0,3,0,2,2,2,2,2,2,2,2,0,3,2,0,2,2,2,2,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        ];
+        const currentLocation = {
+            element: 2,
+            row: 1,
+            column: 1
+        }
+        container.style.width = (gameMap[0].length * baseSize).toString() + 'px';
+        container.style.height = (gameMap.length * baseSize).toString() + 'px';        
+
+        // Score ---->
+        let playerScore = 0;
+
+        document.querySelector('#score').style.width = ((gameMap[0].length * baseSize) / 2).toString() + 'px';
+
+        function increaseScore(amt) {
+            playerScore += amt;
+            document.querySelector('#score span').innerText = playerScore;
+        }
+
+        increaseScore(0);
+        // <---- End Score
+
+        // Timer ---->
+        let minutes = 0;
+        let seconds = 0;
+
+        document.querySelector('#time').style.width = ((gameMap[0].length * baseSize) / 2).toString() + 'px';
+
+        const timer = setInterval(function() {
+            seconds += 1;
+            if(seconds === 60) {
+                minutes += 1;
+                seconds = 0;
+            }
+            if(seconds < 10) {
+                document.querySelector('#seconds').innerText = pad(seconds);
+            }else{
+                document.querySelector('#seconds').innerText = seconds;
+            }
+            document.querySelector('#minutes').innerText = minutes;
+        }, 1000);
+
+        function pad(num) {
+            return (num < 10) ? ("0" + num) : num;
+        }
+        // <---- End Timer
+
+        function drawMap() {
+            for(var i = 0; i < gameMap.length; i++) {
+                for(var x = 0; x < gameMap[i].length; x++) {
+                    const newElement = document.createElement('div');
+                    // Set location
+                    newElement.style.top = (i * baseSize).toString() + 'px';
+                    newElement.style.left = (x * baseSize).toString() + 'px';
+                    // Set display
+                    const elementType = gameMap[i][x];
+                    newElement.setAttribute('class', 'gameElement element_' + elementType);
+                    container.insertAdjacentElement('beforeend', newElement);
+                }
+            }
+        }
+
+        function setPlayerLocation() {
+            currentLocation.element = gameMap[currentLocation.row][currentLocation.column];
+            gameMap[currentLocation.row][currentLocation.column] = 1;
+            if(currentLocation.element !== 2) {
+                switch(currentLocation.element){
+                    case 3:
+                        increaseScore(10);
+                        break;
+                    case 4:
+                        clearInterval(timer);
+                        const finalTime = document.querySelector('#minutes').innerText + ":" + document.querySelector('#seconds').innerText;
+                        alert('Congrats! You scored '+playerScore+' points in '+finalTime+'. Refresh the page to play again.');
+                        break;
+                }
+                currentLocation.element = 2;
+            }
+            drawMap();
+        }
+
+        setPlayerLocation();
+
+        document.addEventListener('keydown', function(e){
+            e.preventDefault;
+            console.log(e.keyCode);
+            switch(e.keyCode){
+                case 39:
+                    movePlayer('right');
+                    break;
+                case 37:
+                    movePlayer('left');
+                    break;
+                case 38:
+                    movePlayer('up');
+                    break;
+                case 40:
+                    movePlayer('down');
+                    break;
+            }
+        })
+
+        function movePlayer(direction) {
+            switch(direction){
+                case 'right':
+                    if(gameMap[currentLocation.row][currentLocation.column + 1] !== 0) {
+                        gameMap[currentLocation.row][currentLocation.column] = currentLocation.element;
+                        currentLocation.column += 1;
+                        setPlayerLocation();
+                    }
+                    break;
+                case 'left':
+                    if(gameMap[currentLocation.row][currentLocation.column - 1] !== 0) {
+                        gameMap[currentLocation.row][currentLocation.column] = currentLocation.element;
+                        currentLocation.column -= 1;
+                        setPlayerLocation();
+                    }
+                    break;
+                case 'up':
+                    if(gameMap[currentLocation.row - 1][currentLocation.column] !== 0) {
+                        gameMap[currentLocation.row][currentLocation.column] = currentLocation.element;
+                        currentLocation.row -= 1;
+                        setPlayerLocation();
+                    }
+                    break;
+                case 'down':
+                    if(gameMap[currentLocation.row + 1][currentLocation.column] !== 0) {
+                        gameMap[currentLocation.row][currentLocation.column] = currentLocation.element;
+                        currentLocation.row += 1;
+                        setPlayerLocation();
+                    }
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>

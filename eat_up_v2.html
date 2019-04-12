@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body {
+            background-color: black;
+        }
+        #container {
+            position: relative;
+        }
+        .gameElement {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: white;
+        }
+        .gameElement.element_0,
+        .gameElement.element_5 {
+            background-color: black;
+        }
+        .gameElement {
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .gameElement.element_1 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/Pacman.png');
+        }
+        .gameElement.element_3 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/cherries.png');
+        }
+        .gameElement.element_4 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/stairs.png');
+        }
+        .gameElement.element_7 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/key.png');
+        }
+        .gameElement.element_8 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/rat.png');
+        }
+        .gameElement.element_-1 {
+            background-image: url('file:///C:/Users/twin5/Desktop/eat_up/gate.png');
+        }
+        #gameInfo {
+            text-align: center;
+        }
+        #score, #time {
+            display: inline-block;
+            font-size: 20px;
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 5px;
+            border: 2px solid black;
+            box-sizing: border-box;
+            background-color: white;
+            width: 250px;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Eat Up</title>
+</head>
+<body>
+    <div id="score">Score: <span></span></div><div id="time">Time Elapsed: <span id="minutes">0</span>:<span id="seconds">00</span></div>
+    <div id="container"></div>
+    <script>
+        const baseSize = 25;
+        const container = document.querySelector('#container');
+        const gameMap = [
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,1,2,2,2,2,2,2,2,6,2,3,0,2,2,2,2,2,3,0],
+            [0,2,0,0,0,0,0,0,0,2,0,2,0,2,0,2,0,2,0,0],
+            [0,2,0,3,0,2,2,2,0,2,0,2,0,2,0,2,0,2,2,0],
+            [0,2,0,2,0,2,0,3,0,2,0,2,2,2,0,2,0,0,2,0],
+            [0,2,2,2,0,2,0,0,0,2,0,2,0,2,0,2,2,0,0,0,0,0,0,0,0],
+            [0,0,0,2,0,2,2,2,2,2,0,2,0,2,0,0,2,0,7,5,5,5,5,5,0],
+            [0,3,0,2,0,0,2,0,0,0,0,2,0,2,3,0,2,0,0,0,0,0,0,5,0],
+            [0,2,2,2,2,2,2,2,2,2,2,3,0,0,0,0,8,0,2,5,5,5,0,5,0],
+            [0,0,0,0,0,2,0,0,0,0,0,0,0,2,6,2,2,2,2,0,0,5,5,5,0],
+            [0,3,2,2,0,2,2,2,2,2,2,2,0,2,0,2,0,0,0,0,0,0,0,0,0],
+            [0,2,0,2,0,0,0,2,0,0,0,2,2,2,0,2,2,2,3,0],
+            [0,2,0,2,2,2,2,2,0,3,0,2,0,2,0,0,2,0,0,0],
+            [0,2,0,0,0,0,0,0,0,2,0,2,0,2,0,2,2,0,3,0],
+            [0,2,2,2,2,2,2,2,2,2,0,2,0,2,0,2,0,0,2,0],
+            [0,0,0,0,0,2,0,0,0,0,0,2,0,2,2,2,2,2,2,0],
+            [0,2,2,2,2,8,2,2,3,0,2,2,0,2,0,0,0,0,2,0],
+            [0,2,0,2,0,0,0,0,0,0,2,0,0,2,0,4,2,0,2,0],
+            [0,3,0,2,2,2,2,2,2,2,2,0,3,2,0,2,2,-1,2,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        ];
+        const currentLocation = {
+            row: 1,
+            column: 1
+        };
+
+        const doorLocation = {
+            row: 18,
+            column: 17
+        };
+
+        const ratLocations = {
+            rat1: {
+                row: 8,
+                column: 16
+            },
+            rat2: {
+                row: 16,
+                column: 5
+            }
+        }
+
+        let isPlayerAlive = true;
+        let hasFoundKey = false;
+
+        // Score ---->
+        let playerScore = 0;
+
+        function increaseScore(amt) {
+            playerScore += amt;
+            document.querySelector('#score span').innerText = playerScore;
+            if(hasFoundKey && playerScore >= 140) {
+                unlockDoor();
+            }
+        }
+
+        increaseScore(0);
+        // <---- End Score
+
+        // Timer ---->
+        let minutes = 0;
+        let seconds = 0;
+
+        const timer = setInterval(function() {
+            seconds += 1;
+            if(seconds === 60) {
+                minutes += 1;
+                seconds = 0;
+            }
+            if(seconds < 10) {
+                document.querySelector('#seconds').innerText = pad(seconds);
+            }else{
+                document.querySelector('#seconds').innerText = seconds;
+            }
+            document.querySelector('#minutes').innerText = minutes;
+        }, 1000);
+
+        function pad(num) {
+            return (num < 10) ? ('0' + num) : num;
+        }
+        // <---- End Timer
+
+        function drawMap() {
+            for(let i = 0; i < gameMap.length; i++) {
+                for(let x = 0; x < gameMap[i].length; x++) {
+                    const newElement = document.createElement('div');
+                    // Set location
+                    newElement.style.top = (i * baseSize).toString() + 'px';
+                    newElement.style.left = (x * baseSize).toString() + 'px';
+                    // Set display
+                    const elementType = gameMap[i][x];
+                    newElement.setAttribute('class', 'gameElement element_' + elementType + ' row_' + i + ' column_' + x);
+                    newElement.setAttribute('row', i);
+                    newElement.setAttribute('column', x);
+                    newElement.setAttribute('element', elementType);
+                    container.insertAdjacentElement('beforeend', newElement);
+                }
+            }
+        }
+
+        drawMap();
+
+        setTimeout(function() {
+            alert("Hey there adventurer! Welcome to the MAZE OF FRUSTRATION! In order to beat the maze and escape, you will need to make your way to the escape Stairs as fast as possible. Unfortunately, an Enchanted Door blocks your way and must be unlocked before you can escape. In order to lift the magic spell that is keeping the door locked, you will need to eat all of the Cherries (140 points) and find your way into the key room to pick up the Wizard's Key. Use the arrow keys to move around and begin your adventure. Oh, and one more thing... try not to die along the way... Good luck! [Insert Evil Laugh Here]");
+        }, 333);
+
+        document.addEventListener('keydown', function(e){
+            e.preventDefault;
+            if(isPlayerAlive) {
+                switch(e.keyCode){
+                    case 39:
+                        movePlayer('right');
+                        break;
+                    case 37:
+                        movePlayer('left');
+                        break;
+                    case 38:
+                        movePlayer('up');
+                        break;
+                    case 40:
+                        movePlayer('down');
+                        break;
+                }
+            } 
+        });
+
+        function movePlayer(direction) {
+            switch(direction){
+                case 'right':
+                    if(gameMap[currentLocation.row][currentLocation.column + 1] > 0) { // Prevent moving into a wall
+                        leaveThisSpace();
+
+                        const nextLocation = document.querySelector('.row_' + currentLocation.row + '.column_' + (currentLocation.column + 1));
+                        moveIntoSpace(nextLocation);
+
+                        // Update gameMape Array
+                        gameMap[currentLocation.row][currentLocation.column + 1] = 1; // Move player to new spot in map array
+                        gameMap[currentLocation.row][currentLocation.column] = 2; // Set current spot to empty space
+
+                        // Update current location object
+                        currentLocation.column += 1;
+                    }
+                    break;
+                case 'left':
+                    if(gameMap[currentLocation.row][currentLocation.column - 1] > 0) { // Prevent moving into a wall
+                        leaveThisSpace();
+
+                        const nextLocation = document.querySelector('.row_' + currentLocation.row + '.column_' + (currentLocation.column - 1));
+                        moveIntoSpace(nextLocation);
+
+                        // Update gameMape Array
+                        gameMap[currentLocation.row][currentLocation.column - 1] = 1; // Move player to new spot in map array
+                        gameMap[currentLocation.row][currentLocation.column] = 2; // Set current spot to empty space
+
+                        // Update current location object
+                        currentLocation.column -= 1;
+                    }
+                    break;
+                case 'up':
+                    if(gameMap[currentLocation.row - 1][currentLocation.column] > 0) { // Prevent moving into a wall
+                        leaveThisSpace();
+
+                        const nextLocation = document.querySelector('.row_' + (currentLocation.row - 1) + '.column_' + (currentLocation.column));
+                        moveIntoSpace(nextLocation);
+
+                        // Update gameMape Array
+                        gameMap[currentLocation.row - 1][currentLocation.column] = 1; // Move player to new spot in map array
+                        gameMap[currentLocation.row][currentLocation.column] = 2; // Set current spot to empty space
+
+                        // Update current location object
+                        currentLocation.row -= 1;
+                    }
+                    break;
+                case 'down':
+                    if(gameMap[currentLocation.row + 1][currentLocation.column] > 0) { // Prevent moving into a wall
+                        leaveThisSpace();
+                        
+                        const nextLocation = document.querySelector('.row_' + (currentLocation.row + 1) + '.column_' + (currentLocation.column));
+                        moveIntoSpace(nextLocation);
+
+                        // Update gameMape Array
+                        gameMap[currentLocation.row + 1][currentLocation.column] = 1; // Move player to new spot in map array
+                        gameMap[currentLocation.row][currentLocation.column] = 2; // Set current spot to empty space
+
+                        // Update current location object
+                        currentLocation.row += 1;
+                    }
+                    break;
+            }
+        }
+
+        function leaveThisSpace() {
+            // Update the DOM at the location that is being moved out of
+            const playerLocation = document.querySelector('.row_' + currentLocation.row + '.column_' + currentLocation.column);
+            const classArray = playerLocation.getAttribute('class').split(' element_1');
+            classArray.push('element_2');
+            const classString = classArray.join(' ');
+            playerLocation.setAttribute('class', classString);
+            playerLocation.setAttribute('element', '2');
+        }
+
+        function moveIntoSpace(nextLocation) {
+            // Update the DOM at the location that is being moved into
+            const locationElement = nextLocation.getAttribute('element');
+            const classArray = nextLocation.getAttribute('class').split(' element_' + locationElement);
+            if(locationElement !== '6'){
+                classArray.push('element_1');
+                const classString = classArray.join(' ');
+                nextLocation.setAttribute('class', classString);
+                nextLocation.setAttribute('element', '1');
+            }
+            processNewSpace(locationElement, nextLocation);
+        }
+
+        function processNewSpace(locationElement, nextLocation) {
+            if(locationElement !== '2') {
+                switch(locationElement) {
+                    case '3': // Eat a cherry
+                        increaseScore(10);
+                        break;
+                    case '4': // Final clock
+                        clearInterval(timer);
+                        clearInterval(moveRatsLoop);
+                        const finalTime = document.querySelector('#minutes').innerText + ':' + document.querySelector('#seconds').innerText;
+                        isPlayerAlive = false;
+                        setTimeout(function() {
+                            alert('Congrats! You beat the game in '+finalTime+' with a score of '+playerScore+'. Refresh the page to play again and see if you can beat your time!');
+                        }, 500);
+                        break;
+                    case '6': // Surprize zombie
+                        nextLocation.style.backgroundColor = 'white';
+                        nextLocation.style.backgroundImage = 'url(file:///C:/Users/twin5/Desktop/eat_up/zombie.jpg)';
+                        killPlayer('zombie');
+                        break;
+                    case '7': // Secret key
+                        hasFoundKey = true;
+                        if(playerScore >= 140){
+                            unlockDoor();
+                        }
+                        break;
+                    case '8':
+                        killPlayer('rat');
+                        break;
+                }
+            }
+        }
+
+        function unlockDoor() {
+            const door = document.querySelector('.element_-1');
+            if(door) {
+                let doorClasses = door.getAttribute('class').split(' element_-1');
+                doorClasses.push('element_2');
+                doorClasses = doorClasses.join(' ');
+                door.setAttribute('class', doorClasses);
+                door.setAttribute('element', '2');
+                gameMap[doorLocation.row][doorLocation.column] = 2;
+            }
+        }
+
+        function moveRat(ratName) {
+            // Locate rat
+            const row = ratLocations[ratName].row;
+            const column = ratLocations[ratName].column;
+            const ratLocation = document.querySelector('.row_' + row + '.column_' + column);
+            const adjacentElements = {
+                up: document.querySelector('.row_' + (row - 1) + '.column_' + column),
+                right: document.querySelector('.row_' + row + '.column_' + (column + 1)),
+                down: document.querySelector('.row_' + (row + 1) + '.column_' + column),
+                left: document.querySelector('.row_' + row + '.column_' + (column - 1))
+            };
+            // Find available moves
+            const availableMoves = [];
+            Object.keys(adjacentElements).forEach((key) => {
+                if(adjacentElements[key].getAttribute('element') > 0 && // Prevents moving into walls & through gate
+                    adjacentElements[key].getAttribute('element') != 3 && // Prevents moving onto cherries
+                    adjacentElements[key].getAttribute('element') != 5) { // Prevents moving onto hidden spaces
+                        availableMoves.push(key);
+                    }
+            });
+            // Randomly generate a move direction from list of available moves
+            const moveDirection = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            // Move rat
+            let moveLocation;
+            switch(moveDirection) {
+                case 'up':
+                    moveLocation = document.querySelector('.row_' + (row - 1) + '.column_' + column);
+                    if(moveLocation.getAttribute('element') === '1') {
+                        killPlayer('rat');
+                    }
+                    // Update DOM
+                    moveLocation.setAttribute('class', 'gameElement element_8 row_' + (row - 1) + ' column_' + column);
+                    updateDOMonRatMove(moveLocation, ratLocation, row, column);
+                    // Update gameMap
+                    gameMap[row][column] = 2;
+                    gameMap[row - 1][column] = 8;
+                    // Update ratLocations
+                    ratLocations[ratName].row -= 1;
+                    // Kill player check
+                    break;
+                case 'right':
+                    moveLocation = document.querySelector('.row_' + row + '.column_' + (column + 1));
+                    if(moveLocation.getAttribute('element') === '1') {
+                        killPlayer('rat');
+                    }
+                    // Update DOM
+                    moveLocation.setAttribute('class', 'gameElement element_8 row_' + row + ' column_' + (column + 1));
+                    updateDOMonRatMove(moveLocation, ratLocation, row, column);
+                    // Update gameMap
+                    gameMap[row][column] = 2;
+                    gameMap[row][column + 1] = 8;
+                    // Update ratLocations
+                    ratLocations[ratName].column += 1;
+                    // Kill player check
+                    break;
+                case 'down':
+                    moveLocation = document.querySelector('.row_' + (row + 1) + '.column_' + column);
+                    if(moveLocation.getAttribute('element') === '1') {
+                        killPlayer('rat');
+                    }
+                    // Update DOM
+                    moveLocation.setAttribute('class', 'gameElement element_8 row_' + (row + 1) + ' column_' + column);
+                    updateDOMonRatMove(moveLocation, ratLocation, row, column);
+                    // Update gameMap
+                    gameMap[row][column] = 2;
+                    gameMap[row + 1][column] = 8;
+                    // Update ratLocations
+                    ratLocations[ratName].row += 1;
+                    // Kill player check
+                    break;
+                case 'left':
+                    moveLocation = document.querySelector('.row_' + row + '.column_' + (column - 1));
+                    if(moveLocation.getAttribute('element') === '1') {
+                        killPlayer('rat');
+                    }
+                    // Update DOM
+                    moveLocation.setAttribute('class', 'gameElement element_8 row_' + row + ' column_' + (column - 1));
+                    updateDOMonRatMove(moveLocation, ratLocation, row, column);
+                    // Update gameMap
+                    gameMap[row][column] = 2;
+                    gameMap[row][column - 1] = 8;
+                    // Update ratLocations
+                    ratLocations[ratName].column -= 1;
+                    // Kill player check
+                    break;
+            }
+        }
+
+        function updateDOMonRatMove(moveLocation, ratLocation, row, column) {
+            moveLocation.setAttribute('element', '8');
+            ratLocation.setAttribute('class', 'gameElement element_2 row_' + row + ' column_' + column);
+            ratLocation.setAttribute('element', '2');
+        }
+
+        const moveRatsLoop = setInterval(function() {
+            Object.keys(ratLocations).forEach((key) => {
+                moveRat(key);
+            });
+        }, 150);
+
+        function killPlayer(reason) {
+            switch(reason) {
+                case 'zombie':
+                    document.querySelector('#score span').innerText = 'Death by Zombie!';
+                    setTimeout(function() {
+                        alert('A zombie popped out of nowehere and ripped your stomach wide open... womp womp!  Refresh the page to try again.');
+                    }, 500);
+                    break;
+                case 'rat':
+                    document.querySelector('#score span').innerText = 'Death by Rat!';
+                    setTimeout(function() {
+                        alert('A rabbid rat attacked you and ate your eyeballs with some fava beans... yum!  Refresh the page to try again.');
+                    }, 500);
+                    break;
+            }
+            clearInterval(timer);
+            clearInterval(moveRatsLoop);
+            isPlayerAlive = false;
+        }
+
+    </script>
+</body>
+</html>
